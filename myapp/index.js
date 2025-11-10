@@ -39,4 +39,118 @@ app.get('/books/', async (request, response) => {
 })
 
 //Get Book API
-app.get('/books/:bookId/', (request, response) => {})
+app.get('/books/:bookId/', async (request, response) => {
+  const {bookId} = request.params
+  const getBookId = `
+  Select * from book
+  where book_id  = ?;`
+  const book = await db.get(getBookId, [bookId])
+  response.send(book)
+})
+
+//addd books
+app.use(express.json())
+
+app.post('/books', async (req, res) => {
+  const bookDetails = req.body
+
+  const {
+    title,
+    authorId,
+    rating,
+    ratingCount,
+    reviewCount,
+    description,
+    pages,
+    dateOfPublication,
+    editionLanguage,
+    price,
+    onlineStores,
+  } = bookDetails
+  const addBookQuery = `
+    INSERT INTO
+      book (title,author_id,rating,rating_count,review_count,description,pages,date_of_publication,edition_language,price,online_stores)
+    VALUES
+      (
+        '${title}',
+         ${authorId},
+         ${rating},
+         ${ratingCount},
+         ${reviewCount},
+        '${description}',
+         ${pages},
+        '${dateOfPublication}',
+        '${editionLanguage}',
+         ${price},
+        '${onlineStores}'
+      );`
+
+  const result = await db.run(addBookQuery)
+  const newBookId = result.lastID
+
+  res.status(200).send({
+    message: 'suceesful added',
+    bookId: newBookId,
+  })
+})
+
+app.put('/books/:bookId', async (req, res) => {
+  const {bookId} = req.params
+  const bookDetails = req.body
+  const {
+    title,
+    authorId,
+    rating,
+    ratingCount,
+    reviewCount,
+    description,
+    pages,
+    dateOfPublication,
+    editionLanguage,
+    price,
+    onlineStores,
+  } = bookDetails
+
+  const updateBookQuery = `
+    UPDATE
+      book
+    SET
+      title='${title}',
+      author_id=${authorId},
+      rating=${rating},
+      rating_count=${ratingCount},
+      review_count=${reviewCount},
+      description='${description}',
+      pages=${pages},
+      date_of_publication='${dateOfPublication}',
+      edition_language='${editionLanguage}',
+      price= ${price},
+      online_stores='${onlineStores}'
+    WHERE
+      book_id = ${bookId};`
+
+  const result = await db.run(updateBookQuery)
+  res.status(200).send('hey burrey')
+})
+
+app.delete('/books/:bookId', async (req, res) => {
+  const {bookId} = req.params
+  const deleteBookQuery = `
+    DELETE FROM
+        book
+    WHERE
+        book_id = ${bookId};`
+  const result = await db.run(deleteBookQuery)
+  res.send('deleetd')
+})
+
+app.get('/authors/:authorId/books', async (req, res) => {
+  const {authorId} = req.params
+
+  const getQuery = `Select * from book
+  where  author_id = ${authorId}
+  `
+  const result = await db.all(getQuery)
+  // const author_details = result.lastID
+  res.send({author: authorId, mem: result.length})
+})
